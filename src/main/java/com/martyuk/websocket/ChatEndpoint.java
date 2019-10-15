@@ -1,6 +1,13 @@
 package com.martyuk.websocket;
 
-import java.io.IOException;
+import com.martyuk.websocket.dto.Message;
+import com.martyuk.websocket.dto.MyWord;
+import com.martyuk.websocket.jsonEncDec.decoders.MessageDecoder;
+import com.martyuk.websocket.jsonEncDec.decoders.MyWordDecoder;
+import com.martyuk.websocket.jsonEncDec.encoders.MessageEncoder;
+
+import java.io.*;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -12,7 +19,7 @@ import javax.websocket.server.ServerEndpoint;
 
 
 
-@ServerEndpoint(value="/chat/{username}",decoders = MessageDecoder.class,
+@ServerEndpoint(value="/chat/{id}",decoders = {MessageDecoder.class, MyWordDecoder.class},
         encoders = MessageEncoder.class )
 public class ChatEndpoint {
 
@@ -20,11 +27,13 @@ public class ChatEndpoint {
     private static Set<ChatEndpoint> chatEndpoints
             = new CopyOnWriteArraySet<>();
     private static HashMap<String, String> users = new HashMap<>();
+    private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+
 
     @OnOpen
     public void onOpen(
             Session session,
-            @PathParam("username") String username) throws IOException {
+            @PathParam("id") String username) throws IOException {
 
         this.session = session;
         chatEndpoints.add(this);
@@ -39,12 +48,17 @@ public class ChatEndpoint {
             throws IOException, EncodeException {
         System.out.println(message.getCommand());
 
-        broadcast(message);
+        broadcast(message, "text");
+    }
+
+    @OnMessage
+    public void processUpload(ByteBuffer msg, boolean last, Session session) throws IOException, EncodeException {
+       broadcast(msg,"binary");
     }
 
     @OnClose
     public void onClose(Session session) throws IOException {
-
+        System.out.println("close");
         chatEndpoints.remove(this);
 
     }
@@ -52,16 +66,29 @@ public class ChatEndpoint {
     @OnError
     public void onError(Session session, Throwable throwable) {
         // Do error handling here
+        session.getAsyncRemote().sendText("Ошибка");
     }
 
-    private static void broadcast(Message message)
+    private static void broadcast(Object object, String type)
             throws IOException, EncodeException {
+
 
         chatEndpoints.forEach(endpoint -> {
             synchronized (endpoint) {
                 try {
-                    endpoint.session.getBasicRemote().
-                            sendObject(message.getCommand());
+                    switch (type){
+                        case ("text"):
+                            System.out.println(object);
+                            Message message = (Message) object;
+                            endpoint.session.getBasicRemote().
+                                    sendObject(message.getCommand());
+                            break;
+                        case ("binary"):
+                            ByteBuffer byteBuffer = (ByteBuffer) object;
+                            endpoint.session.getBasicRemote().sendBinary(byteBuffer);
+                            break;
+
+                    }
                 } catch (IOException | EncodeException e) {
                     e.printStackTrace();
                 }

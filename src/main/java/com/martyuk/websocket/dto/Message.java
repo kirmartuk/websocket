@@ -1,4 +1,4 @@
-package com.martyuk.websocket;
+package com.martyuk.websocket.dto;
 
 public class Message {
     String command;

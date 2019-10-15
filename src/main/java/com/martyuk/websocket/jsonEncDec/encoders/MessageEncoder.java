@@ -1,4 +1,4 @@
-package com.martyuk.websocket;
+package com.martyuk.websocket.jsonEncDec.encoders;
 
 import com.google.gson.Gson;
 

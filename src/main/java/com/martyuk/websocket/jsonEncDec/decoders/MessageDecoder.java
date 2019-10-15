@@ -1,6 +1,7 @@
-package com.martyuk.websocket;
+package com.martyuk.websocket.jsonEncDec.decoders;
 
 import com.google.gson.Gson;
+import com.martyuk.websocket.dto.Message;
 
 import javax.websocket.DecodeException;
 import javax.websocket.Decoder;
@@ -13,8 +14,8 @@ public class MessageDecoder implements Decoder.Text<Message> {
 
     @Override
     public Message decode(String s) throws DecodeException {
-        Message message = gson.fromJson(s,Message.class);
-        return message;
+        Message object= gson.fromJson(s,Message.class);
+        return object;
     }
 
     @Override

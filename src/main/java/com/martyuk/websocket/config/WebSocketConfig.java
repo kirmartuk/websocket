@@ -1,4 +1,4 @@
-package com.martyuk.websocket;
+package com.martyuk.websocket.config;
 
 import com.martyuk.websocket.ChatEndpoint;
 import org.springframework.context.annotation.Bean;
