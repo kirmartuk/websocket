@@ -38,22 +38,23 @@ public class ChatEndpoint {
         this.session = session;
         chatEndpoints.add(this);
         System.out.println(session.getId());
-        users.put(session.getId(), username);
+        users.put(session.getId(),username);
 
 
     }
 
     @OnMessage
-    public void onMessage(Session session, Message message)
+    public void onMessage(Session session, Message message,@PathParam("id") String id)
             throws IOException, EncodeException {
         System.out.println(message.getCommand());
+        System.out.println(id);
 
-        broadcast(message, "text");
+        broadcast(message, "text",id);
     }
 
     @OnMessage
-    public void processUpload(ByteBuffer msg, boolean last, Session session) throws IOException, EncodeException {
-       broadcast(msg,"binary");
+    public void processUpload(ByteBuffer msg, boolean last, Session session,@PathParam("id") String id) throws IOException, EncodeException {
+       broadcast(msg,"binary",id);
     }
 
     @OnClose
@@ -69,11 +70,13 @@ public class ChatEndpoint {
         session.getAsyncRemote().sendText("Ошибка");
     }
 
-    private static void broadcast(Object object, String type)
+    private static void broadcast(Object object, String type,String id)
             throws IOException, EncodeException {
 
 
-        chatEndpoints.forEach(endpoint -> {
+        chatEndpoints.stream()
+                .filter(chatEndpoint -> users.get(chatEndpoint.session.getId()).equals(id))
+                .forEach(endpoint -> {
             synchronized (endpoint) {
                 try {
                     switch (type){
