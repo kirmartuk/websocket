@@ -1,9 +1,8 @@
 package com.martyuk.websocket;
 
 import com.martyuk.websocket.dto.Message;
-import com.martyuk.websocket.dto.MyWord;
 import com.martyuk.websocket.jsonEncDec.decoders.MessageDecoder;
-import com.martyuk.websocket.jsonEncDec.decoders.MyWordDecoder;
+import com.martyuk.websocket.jsonEncDec.decoders.PrinterClientCommunicationDecoder;
 import com.martyuk.websocket.jsonEncDec.encoders.MessageEncoder;
 
 import java.io.*;
@@ -19,7 +18,7 @@ import javax.websocket.server.ServerEndpoint;
 
 
 
-@ServerEndpoint(value="/chat/{id}",decoders = {MessageDecoder.class, MyWordDecoder.class},
+@ServerEndpoint(value="/chat/{id}",decoders = {MessageDecoder.class, PrinterClientCommunicationDecoder.class},
         encoders = MessageEncoder.class )
 public class ChatEndpoint {
 
@@ -38,6 +37,11 @@ public class ChatEndpoint {
         this.session = session;
         chatEndpoints.add(this);
         System.out.println(session.getId());
+        System.out.println(session.getMaxBinaryMessageBufferSize());
+        session.setMaxBinaryMessageBufferSize(2000000);
+        System.out.println(session.getMaxBinaryMessageBufferSize());
+
+
         users.put(session.getId(),username);
 
 
@@ -81,13 +85,13 @@ public class ChatEndpoint {
                 try {
                     switch (type){
                         case ("text"):
-                            System.out.println(object);
                             Message message = (Message) object;
                             endpoint.session.getBasicRemote().
                                     sendObject(message.getCommand());
                             break;
                         case ("binary"):
                             ByteBuffer byteBuffer = (ByteBuffer) object;
+
                             endpoint.session.getBasicRemote().sendBinary(byteBuffer);
                             break;
 
