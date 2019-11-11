@@ -57,7 +57,8 @@ public class ChatEndpoint {
     }
 
     @OnMessage
-    public void processUpload(ByteBuffer msg, boolean last, Session session,@PathParam("id") String id) throws IOException, EncodeException {
+    public void processUpload(byte[] imageData, boolean last, Session session,@PathParam("id") String id) throws IOException, EncodeException {
+        ByteBuffer msg = ByteBuffer.wrap(imageData);
        broadcast(msg,"binary",id);
     }
 
@@ -92,7 +93,7 @@ public class ChatEndpoint {
                         case ("binary"):
                             ByteBuffer byteBuffer = (ByteBuffer) object;
 
-                            endpoint.session.getBasicRemote().sendBinary(byteBuffer);
+                            endpoint.session.getAsyncRemote().sendBinary(byteBuffer);
                             break;
 
                     }
