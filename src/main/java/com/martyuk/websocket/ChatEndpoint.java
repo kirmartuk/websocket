@@ -1,8 +1,10 @@
 package com.martyuk.websocket;
 
 import com.martyuk.websocket.dto.Message;
+import com.martyuk.websocket.dto.Test;
 import com.martyuk.websocket.jsonEncDec.decoders.MessageDecoder;
 import com.martyuk.websocket.jsonEncDec.decoders.PrinterClientCommunicationDecoder;
+import com.martyuk.websocket.jsonEncDec.decoders.TestDecoder;
 import com.martyuk.websocket.jsonEncDec.encoders.MessageEncoder;
 
 import java.io.*;
@@ -18,10 +20,10 @@ import javax.websocket.server.ServerEndpoint;
 
 
 
-@ServerEndpoint(value="/chat/{id}",decoders = {MessageDecoder.class, PrinterClientCommunicationDecoder.class},
+@ServerEndpoint(value="/chat/{id}",decoders = { TestDecoder.class, MessageDecoder.class, PrinterClientCommunicationDecoder.class},
         encoders = MessageEncoder.class )
 public class ChatEndpoint {
-
+    static String file;
     private Session session;
     private static Set<ChatEndpoint> chatEndpoints
             = new CopyOnWriteArraySet<>();
@@ -48,18 +50,18 @@ public class ChatEndpoint {
     }
 
     @OnMessage
-    public void onMessage(Session session, Message message,@PathParam("id") String id)
+    public void onMessage(Session session, Test message, @PathParam("id") String id)
             throws IOException, EncodeException {
-        System.out.println(message.getCommand());
-        System.out.println(id);
-
+        System.out.println(message.getSender()+" "+message.getMessage());
+        file = message.getMessage();
+       // System.out.println(file);
         broadcast(message, "text",id);
     }
 
     @OnMessage
     public void processUpload(byte[] imageData, boolean last, Session session,@PathParam("id") String id) throws IOException, EncodeException {
         ByteBuffer msg = ByteBuffer.wrap(imageData);
-       broadcast(msg,"binary",id);
+        broadcast(msg,"binary",id);
     }
 
     @OnClose
@@ -72,6 +74,8 @@ public class ChatEndpoint {
     @OnError
     public void onError(Session session, Throwable throwable) {
         // Do error handling here
+        System.out.println(throwable.getMessage());
+        System.out.println(throwable.getCause());
         session.getAsyncRemote().sendText("Ошибка");
     }
 
@@ -82,25 +86,25 @@ public class ChatEndpoint {
         chatEndpoints.stream()
                 .filter(chatEndpoint -> users.get(chatEndpoint.session.getId()).equals(id))
                 .forEach(endpoint -> {
-            synchronized (endpoint) {
-                try {
-                    switch (type){
-                        case ("text"):
-                            Message message = (Message) object;
-                            endpoint.session.getBasicRemote().
-                                    sendObject(message.getCommand());
-                            break;
-                        case ("binary"):
-                            ByteBuffer byteBuffer = (ByteBuffer) object;
+                    synchronized (endpoint) {
+                        try {
+                            switch (type){
+                                case ("text"):
+                                    Test message = (Test) object;
+                                    endpoint.session.getBasicRemote().
+                                            sendObject(message);
+                                    break;
+                                case ("binary"):
+                                    ByteBuffer byteBuffer = (ByteBuffer) object;
 
-                            endpoint.session.getAsyncRemote().sendBinary(byteBuffer);
-                            break;
+                                    endpoint.session.getAsyncRemote().sendBinary(byteBuffer);
+                                    break;
 
+                            }
+                        } catch (IOException | EncodeException e) {
+                            e.printStackTrace();
+                        }
                     }
-                } catch (IOException | EncodeException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+                });
     }
 }
