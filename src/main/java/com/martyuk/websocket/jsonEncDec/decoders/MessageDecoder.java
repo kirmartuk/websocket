@@ -14,7 +14,7 @@ public class MessageDecoder implements Decoder.Text<Message> {
 
     @Override
     public Message decode(String s) throws DecodeException {
-        Message object= gson.fromJson(s,Message.class);
+        Message object= gson.fromJson(s, Message.class);
         return object;
     }
 
